@@ -1,10 +1,10 @@
 from flask          import Flask
 from flask          import render_template
 from flask          import redirect
+from flask          import request
 from libsql_client  import create_client_sync
 from dotenv         import load_dotenv
 import os
-
 
 # Load Turso environment variables from the .env file
 load_dotenv()
@@ -54,6 +54,7 @@ def show_thing(id):
         """
     values = [id]
     result = client.execute(sql, values)
+    print(values)
     things = result.rows[0]
 
     return render_template("pages/thing.jinja", thing=things)
@@ -66,13 +67,36 @@ def show_thing(id):
 def new_thing():
     return render_template("pages/thing-form.jinja")
 
+#-----------------------------------------------------------
+# New thing form page
+#-----------------------------------------------------------
+@app.post ("/add-thing")
+def add_thing():
+    name = request.form.get("name")
+    price = request.form.get("price")
+    client = connect_db()
+    # add the thing to the DB
+    sql = "INSERT INTO things (name, price) VALUES (?, ?) "
+    values = [name, price]
+    client.execute(sql, values)
+    # head to the homepage to see the list
+    return redirect("/")
+       
 
 #-----------------------------------------------------------
 # Thing deletion
 #-----------------------------------------------------------
 @app.get("/delete/<int:id>")
 def delete_thing(id):
+    client = connect_db()
+
+    sql = "DELETE FROM things WHERE id=?"
+    values = [id]
+    client.execute(sql, values)
+
+  
     return redirect("/")
+       
 
 
 #-----------------------------------------------------------
